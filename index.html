@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" data-edition="roast">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>At Your Age… What had famous people done by your age?</title>
+    <meta
+      name="description"
+      content="Type your age. See what famous people had already done by then. Get roasted, or get hyped. Live facts from Wikidata."
+    />
+    <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="At Your Age…" />
+    <meta property="og:title" content="At Your Age… What had famous people done by your age?" />
+    <meta
+      property="og:description"
+      content="Type your age. See what famous people had already done by then. Get roasted, or get hyped."
+    />
+    <meta property="og:image" content="https://muktaditbf.github.io/at-your-age/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="At your age… A tabloid front page next to a sunny newspaper front page."
+    />
+    <meta property="og:url" content="https://muktaditbf.github.io/at-your-age/" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script>
+      // Pick the edition and saved theme before the first paint, so nothing flashes.
+      try {
+        if (new URLSearchParams(location.search).get('mode') === 'hype')
+          document.documentElement.dataset.edition = 'hype';
+        const theme = localStorage.getItem('aya:theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>At Your Age… needs JavaScript to search Wikidata.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,271 @@
+@import "tailwindcss";
+
+/*
+ * Two editions of one paper, each with a day and a night print.
+ *
+ * Roast, "The Daily Disappointment": a red-top tabloid. Cool newsprint, pure black ink,
+ * tabloid red, shouty condensed caps, halftone photos.
+ * Hype, "The Late Bloomer Times": a sunny paper. Butter yellow, forest-green ink, marigold,
+ * soft serif headlines, colour photos in arches.
+ *
+ * --accent is for fills (text on it uses --on-accent); --accent-ink is accent-coloured text.
+ */
+:root,
+:root[data-edition="roast"] {
+  --paper: #f6f5f1;
+  --paper-2: #e9e7e1;
+  --ink: #000000;
+  --muted: #45423d;
+  --rule: #000000;
+  --accent: #d6000f;
+  --on-accent: #ffffff;
+  --accent-ink: #c2000e;
+  --display: "Anton", "Impact", "Arial Narrow", sans-serif;
+  --display-case: uppercase;
+  --display-weight: 400;
+  --display-tracking: 0.005em;
+  --nameplate: "UnifrakturCook", "Old English Text MT", serif;
+  --nameplate-weight: 700;
+  color-scheme: light;
+}
+
+:root[data-edition="hype"] {
+  --paper: #fff3c4;
+  --paper-2: #ffe598;
+  --ink: #0f3d2e;
+  --muted: #35574a;
+  --rule: #0f3d2e;
+  --accent: #f2a900;
+  --on-accent: #0f3d2e;
+  --accent-ink: #8a4700;
+  --display: "Fraunces Variable", "Georgia", serif;
+  --display-case: none;
+  --display-weight: 750;
+  --display-tracking: -0.015em;
+  --nameplate: "Fraunces Variable", "Georgia", serif;
+  --nameplate-weight: 800;
+  color-scheme: light;
+}
+
+/* Night edition: follows the system unless the reader picked light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]),
+  :root:not([data-theme="light"])[data-edition="roast"] {
+    --paper: #000000;
+    --paper-2: #1a1a1a;
+    --ink: #f4f2ec;
+    --muted: #bdb8ae;
+    --rule: #f4f2ec;
+    --accent: #d6000f;
+    --on-accent: #ffffff;
+    --accent-ink: #ff6b72;
+    color-scheme: dark;
+  }
+  :root:not([data-theme="light"])[data-edition="hype"] {
+    --paper: #0c271d;
+    --paper-2: #14392a;
+    --ink: #fff3c4;
+    --muted: #c3d6c8;
+    --rule: #fff3c4;
+    --accent: #ffb627;
+    --on-accent: #0c271d;
+    --accent-ink: #ffc65a;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"],
+:root[data-theme="dark"][data-edition="roast"] {
+  --paper: #000000;
+  --paper-2: #1a1a1a;
+  --ink: #f4f2ec;
+  --muted: #bdb8ae;
+  --rule: #f4f2ec;
+  --accent: #d6000f;
+  --on-accent: #ffffff;
+  --accent-ink: #ff6b72;
+  color-scheme: dark;
+}
+:root[data-theme="dark"][data-edition="hype"] {
+  --paper: #0c271d;
+  --paper-2: #14392a;
+  --ink: #fff3c4;
+  --muted: #c3d6c8;
+  --rule: #fff3c4;
+  --accent: #ffb627;
+  --on-accent: #0c271d;
+  --accent-ink: #ffc65a;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-ink: var(--accent-ink);
+  --font-body: "Newsreader Variable", "Georgia", serif;
+  --font-display: var(--display);
+  --font-nameplate: var(--nameplate);
+  --font-shout: "Anton", "Impact", sans-serif;
+}
+
+@layer base {
+  html {
+    background: var(--paper);
+    -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
+  }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-optical-sizing: auto;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  :focus-visible {
+    outline: 3px solid var(--accent-ink);
+    outline-offset: 3px;
+  }
+  a {
+    color: inherit;
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 1px;
+  }
+  button {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* Headlines change voice with the edition: shouty caps or soft serif. */
+  .display {
+    font-family: var(--display);
+    font-weight: var(--display-weight);
+    text-transform: var(--display-case);
+    letter-spacing: var(--display-tracking);
+    font-variation-settings:
+      "SOFT" 100,
+      "WONK" 0;
+  }
+
+  .nameplate {
+    font-family: var(--nameplate);
+    font-weight: var(--nameplate-weight);
+    font-variation-settings: "SOFT" 100;
+    line-height: 1;
+  }
+
+  /* Photos: halftone newsprint in the roast edition, colour arches in the hype edition. */
+  .photo {
+    position: relative;
+    overflow: hidden;
+    background: var(--paper-2);
+    isolation: isolate;
+  }
+  .photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 22%;
+  }
+  [data-edition="roast"] .photo {
+    border: 3px solid var(--rule);
+  }
+  [data-edition="roast"] .photo img {
+    filter: grayscale(1) contrast(1.3) brightness(1.04);
+  }
+  [data-edition="roast"] .photo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle, var(--paper) 0.8px, transparent 1.25px);
+    background-size: 4px 4px;
+    opacity: 0.5;
+  }
+  [data-edition="hype"] .photo {
+    border-radius: 999px 999px 0.75rem 0.75rem;
+    box-shadow:
+      0 0 0 3px var(--paper),
+      0 0 0 6px var(--accent);
+  }
+
+  /* The rubber stamp on the lead story. */
+  .stamp {
+    font-family: "Anton", "Impact", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--accent-ink);
+    border: 0.12em solid currentColor;
+    border-radius: 0.12em;
+    padding: 0.14em 0.32em 0.1em;
+    background: color-mix(in srgb, var(--paper) 70%, transparent);
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.4 2.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mask-size: 160px 80px;
+  }
+  [data-edition="hype"] .stamp {
+    font-family: "Fraunces Variable", Georgia, serif;
+    font-weight: 800;
+    text-transform: none;
+    letter-spacing: 0;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-accent);
+    border-color: var(--accent);
+    mask-image: none;
+  }
+
+  /* The stamp lands on the lead story with a thump once the front page is complete. */
+  .stamp-slap {
+    transform: rotate(var(--tilt, -8deg));
+    animation: slap 0.5s cubic-bezier(0.2, 1.5, 0.45, 1) 0.15s both;
+  }
+  @keyframes slap {
+    from {
+      opacity: 0;
+      transform: scale(2.4) rotate(-24deg);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) rotate(var(--tilt, -8deg));
+    }
+  }
+
+  /* Thick rule between sections, a tabloid staple. */
+  .rule-heavy {
+    border: 0;
+    border-top: 6px solid var(--rule);
+    margin: 0;
+  }
+  .rule-thin {
+    border: 0;
+    border-top: 1.5px solid var(--rule);
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

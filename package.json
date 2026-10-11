@@ -1,0 +1,77 @@
+{
+  "name": "at-your-age",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Type your age. See what famous people had done by then. Get roasted, or get hyped. Live data from Wikidata.",
+  "license": "MIT",
+  "author": "Muktaditbf",
+  "homepage": "https://muktaditbf.github.io/at-your-age/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Muktaditbf/at-your-age.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Muktaditbf/at-your-age/issues"
+  },
+  "keywords": [
+    "wikidata",
+    "sparql",
+    "wikipedia",
+    "react",
+    "typescript",
+    "funny",
+    "motivation"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "check": "biome check . && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:live": "LIVE=1 playwright test e2e/live.spec.ts",
+    "probe": "node scripts/probe.ts",
+    "fixtures": "node scripts/record-fixtures.ts",
+    "icons": "pwa-assets-generator",
+    "og": "node scripts/og.ts",
+    "screenshots": "node scripts/screenshots.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "@fontsource/anton": "^5.3.0",
+    "@fontsource/unifrakturcook": "^5.3.0",
+    "lucide-react": "^1.55.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@biomejs/biome": "^2.5.15",
+    "@playwright/test": "^1.64.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vite-pwa/assets-generator": "^2.0.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  }
+}

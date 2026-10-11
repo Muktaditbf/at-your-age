@@ -1,0 +1,27 @@
+name: 📰 Suggest a line
+description: A roast, a hype line or a classified ad for the paper
+labels: [line]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Lines are about procrastination and everyday life, never about who someone is or about
+        the famous people. Keep it under 80 characters. See [`src/lib/lines.ts`](../blob/main/src/lib/lines.ts).
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of line?
+      options:
+        - Roast (after "Meanwhile, you:")
+        - Hype
+        - Classified ad
+        - Press room (while searching)
+    validations:
+      required: true
+  - type: textarea
+    id: line
+    attributes:
+      label: The line
+      placeholder: "bought a planner. It is still in the plastic."
+    validations:
+      required: true

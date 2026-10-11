@@ -1,0 +1,28 @@
+name: 🐛 Bug report
+description: Something doesn't work, or a fact looks wrong
+labels: [bug]
+body:
+  - type: input
+    id: link
+    attributes:
+      label: Link to the front page
+      description: Copy it from the address bar, e.g. https://muktaditbf.github.io/at-your-age/?age=24
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect instead? For a wrong fact, which story?
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: e.g. Pixel 8, Chrome / iPhone 15, Safari / Windows, Edge
+  - type: markdown
+    attributes:
+      value: |
+        Facts come from Wikidata, which anyone can fix. If a date is wrong there, correcting it on
+        Wikidata fixes it here too, for everyone.
