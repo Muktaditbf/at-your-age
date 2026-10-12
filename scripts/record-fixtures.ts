@@ -48,10 +48,11 @@ for (let i = 0; i < list.length; i += 50) {
     formatversion: '2',
     origin: '*',
     redirects: '1',
-    prop: 'pageimages|description',
+    prop: 'pageimages|description|pageviews',
     piprop: 'thumbnail|original',
     pithumbsize: '330',
     pilimit: '50',
+    pvipdays: '30',
     titles: list.slice(i, i + 50).join('|'),
   });
   const json = (await (await fetch(`${WIKIPEDIA}?${params}`)).json()) as {

@@ -83,7 +83,7 @@ PREFIX p: <http://www.wikidata.org/prop/>
 PREFIX ps: <http://www.wikidata.org/prop/statement/>
 PREFIX pq: <http://www.wikidata.org/prop/qualifier/>`;
 
-export const ROW_LIMIT = 60;
+export const ROW_LIMIT = 80;
 
 export function clampAge(age: number): number {
   if (!Number.isFinite(age)) return MIN_AGE;

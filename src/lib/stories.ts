@@ -26,6 +26,8 @@ export interface Story {
   born: WikiDate;
   /** English Wikipedia article URL, when there is one. */
   article?: string;
+  /** English Wikipedia page views over the last 30 days, once known. */
+  views?: number;
   /** Best first. */
   deeds: Deed[];
 }
@@ -105,8 +107,17 @@ export function compareDeeds(a: Deed, b: Deed): number {
   return b.thingFame - a.thingFame || Number(b.age.exact) - Number(a.age.exact);
 }
 
+/**
+ * How well readers will know this person. Page views say who people care about now; until
+ * those are known (or when there's no English article) the number of Wikipedia language
+ * editions stands in, scaled to roughly the same range.
+ */
+export function popularity(story: Story): number {
+  return story.views ?? story.fame * 500;
+}
+
 export function compareStories(a: Story, b: Story): number {
-  return b.fame - a.fame || a.name.localeCompare(b.name);
+  return popularity(b) - popularity(a) || b.fame - a.fame || a.name.localeCompare(b.name);
 }
 
 /**
@@ -127,6 +138,7 @@ export function mergeStories(existing: readonly Story[], incoming: readonly Stor
       byId.set(story.id, {
         ...current,
         article: current.article ?? story.article,
+        views: current.views ?? story.views,
         deeds: [...current.deeds, ...extra].sort(compareDeeds),
       });
     }

@@ -26,20 +26,28 @@ describe('AgeForm', () => {
     );
   });
 
-  it('steps with buttons and arrow keys', async () => {
-    render(<AgeForm age={30} mode="hype" onSubmit={vi.fn()} />);
-    const input = screen.getByRole('textbox', { name: 'Your age' });
-    await userEvent.click(screen.getByRole('button', { name: 'One year older' }));
-    expect(input).toHaveValue('31');
-    await userEvent.type(input, '{ArrowDown}{ArrowDown}');
-    expect(input).toHaveValue('29');
-    expect(screen.getByRole('button', { name: 'Hype me' })).toBeInTheDocument();
+  it('works the ruler like a slider and says when the age changed', async () => {
+    const onSubmit = vi.fn();
+    render(<AgeForm age={30} mode="hype" onSubmit={onSubmit} />);
+    const ruler = screen.getByRole('slider', { name: 'Your age' });
+    expect(ruler).toHaveAttribute('aria-valuenow', '30');
+    ruler.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(ruler).toHaveAttribute('aria-valuenow', '31');
+    expect(ruler).toHaveAttribute('aria-valuetext', '31 years old');
+    expect(screen.getByRole('textbox', { name: 'Your age' })).toHaveValue('31');
+    expect(screen.getByRole('button', { name: 'Hype me up at 31' })).toBeInTheDocument();
+    await userEvent.keyboard('{PageUp}{End}');
+    expect(ruler).toHaveAttribute('aria-valuenow', '120');
+    await userEvent.keyboard('{Home}{Enter}');
+    expect(onSubmit).toHaveBeenCalledWith(1);
   });
 
-  it('searches straight away from a quick pick', async () => {
-    const onSubmit = vi.fn();
-    render(<AgeForm age={undefined} mode="roast" onSubmit={onSubmit} />);
-    await userEvent.click(screen.getByRole('button', { name: '40' }));
-    expect(onSubmit).toHaveBeenCalledWith(40);
+  it('steps with the arrow keys in the headline too', async () => {
+    render(<AgeForm age={undefined} mode="roast" onSubmit={vi.fn()} />);
+    const input = screen.getByRole('textbox', { name: 'Your age' });
+    await userEvent.type(input, '30{ArrowUp}{ArrowUp}{ArrowDown}');
+    expect(input).toHaveValue('31');
+    expect(screen.getByRole('slider', { name: 'Your age' })).toHaveAttribute('aria-valuenow', '31');
   });
 });

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Row } from './qlever.ts';
-import { ageFits, mergeStories, type Story, storiesFromRows } from './stories.ts';
+import {
+  ageFits,
+  compareStories,
+  mergeStories,
+  popularity,
+  type Story,
+  storiesFromRows,
+} from './stories.ts';
 
 const uri = (q: string) => ({ type: 'uri', value: `http://www.wikidata.org/entity/${q}` });
 const lit = (value: string | number) => ({ type: 'literal', value: String(value) });
@@ -228,5 +235,27 @@ describe('mergeStories', () => {
     );
     expect(merged.map((s) => s.id)).toEqual(['Q2', 'Q1']);
     expect(merged[1]?.deeds.map((d) => d.thingId)).toEqual(['a', 'c']);
+  });
+});
+
+describe('popularity', () => {
+  const person = (id: string, fame: number, views?: number): Story => ({
+    id,
+    name: id,
+    fame,
+    views,
+    born: { year: 1950, month: 1, day: 1, precision: 'year' },
+    deeds: [],
+  });
+
+  it('ranks by page views when known', () => {
+    const king = person('King', 120, 8_000);
+    const star = person('Star', 80, 300_000);
+    expect([king, star].sort(compareStories).map((s) => s.id)).toEqual(['Star', 'King']);
+  });
+
+  it('falls back to language editions when views are unknown', () => {
+    expect(popularity(person('A', 100))).toBe(50_000);
+    expect(popularity(person('B', 100, 7))).toBe(7);
   });
 });

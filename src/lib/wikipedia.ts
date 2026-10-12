@@ -1,5 +1,6 @@
 /**
- * Photos and one-line bios from English Wikipedia, up to 50 people per request.
+ * Photos, one-line bios and popularity (page views over the last 30 days) from English
+ * Wikipedia, up to 50 people per request.
  * The API and the image server both allow cross-origin use, so photos can also be drawn on the
  * share card's canvas.
  */
@@ -20,7 +21,12 @@ export interface Photo {
 export interface PersonInfo {
   description?: string;
   photo?: Photo;
+  /** English Wikipedia page views over the last 30 days: how much people care right now. */
+  views?: number;
 }
+
+/** Days of page views to add up. */
+export const VIEW_DAYS = 30;
 
 const image = z.object({ source: z.string(), width: z.number(), height: z.number() });
 const rename = z.object({ from: z.string(), to: z.string() });
@@ -31,6 +37,7 @@ const page = z.object({
   description: z.optional(z.string()),
   thumbnail: z.optional(image),
   original: z.optional(image),
+  pageviews: z.optional(z.record(z.string(), z.nullable(z.number()))),
 });
 
 const response = z.object({
@@ -99,10 +106,11 @@ export async function fetchPeople(
       formatversion: '2',
       origin: '*',
       redirects: '1',
-      prop: 'pageimages|description',
+      prop: 'pageimages|description|pageviews',
       piprop: 'thumbnail|original',
       pithumbsize: '330',
       pilimit: String(BATCH),
+      pvipdays: String(VIEW_DAYS),
       titles: batch.join('|'),
     });
     const res = await fetch(`${API}?${params}`, { signal });
@@ -125,8 +133,14 @@ export async function fetchPeople(
       result.set(title, {
         description: found.description,
         photo: found.thumbnail ? photoFrom(found.thumbnail, found.original) : undefined,
+        views: found.pageviews ? totalViews(found.pageviews) : undefined,
       });
     }
   }
   return result;
+}
+
+/** Adds up daily views; days Wikipedia hasn't counted yet come back as null. */
+export function totalViews(days: Record<string, number | null>): number {
+  return Object.values(days).reduce<number>((sum, views) => sum + (views ?? 0), 0);
 }

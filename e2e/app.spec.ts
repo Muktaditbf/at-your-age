@@ -58,20 +58,79 @@ test('the back button goes back to the previous age', async ({ page }) => {
   await offline(page);
   await page.goto('./?age=24');
   await waitForEdition(page);
-  await page.getByRole('button', { name: '40' }).click();
+  const age = page.getByRole('textbox', { name: 'Your age' });
+  await age.fill('40');
+  await age.press('Enter');
   await expect(page).toHaveURL(/\?age=40$/);
   await page.goBack();
   await expect(page).toHaveURL(/\?age=24$/);
-  await expect(page.getByRole('textbox', { name: 'Your age' })).toHaveValue('24');
+  await expect(age).toHaveValue('24');
 });
 
 test('an age with nothing famous gets a friendly empty page', async ({ page }) => {
   await offline(page);
   await page.goto('./');
-  await page.getByRole('button', { name: '65' }).click();
+  const age = page.getByRole('textbox', { name: 'Your age' });
+  await age.fill('65');
+  await age.press('Enter');
   await waitForEdition(page);
   await expect(page.getByText('Nothing to report')).toBeVisible();
   await expect(page.getByText('0 stories.')).toBeVisible();
+});
+
+test('the ruler picks an age, and the button says it has changed', async ({ page }) => {
+  await offline(page);
+  await page.goto('./?age=24');
+  await waitForEdition(page);
+  const ruler = page.getByRole('slider', { name: 'Your age' });
+  await expect(ruler).toHaveAttribute('aria-valuenow', '24');
+  await ruler.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(ruler).toHaveAttribute('aria-valuenow', '25');
+  await expect(page.getByRole('textbox', { name: 'Your age' })).toHaveValue('25');
+  // The old results stay until the reader asks again.
+  await expect(page).toHaveURL(/\?age=24$/);
+  await expect(page.getByRole('button', { name: 'Roast me at 25' })).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\?age=25$/);
+});
+
+test('after a roast, "Hype me up" opens the hype edition for the same age', async ({ page }) => {
+  await offline(page);
+  await page.goto('./?age=24');
+  await waitForEdition(page);
+  const card = page.getByRole('complementary', { name: 'Switch to the hype edition' });
+  await expect(card.getByText('Okay, that one hurt.')).toBeVisible();
+  await card.getByRole('button', { name: 'Hype me up' }).click();
+  await expect(page).toHaveURL(/\?age=24&mode=hype$/);
+  await expect(page.getByText('The Late Bloomer Times')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Who did their big thing after 24' }),
+  ).toBeFocused();
+  await waitForEdition(page);
+  await expect(page.getByRole('complementary', { name: 'Switch to the hype edition' })).toHaveCount(
+    0,
+  );
+});
+
+test('the floating "Hype me up" pill follows the roast down the page', async ({ page }) => {
+  await offline(page);
+  await page.goto('./?age=24');
+  await waitForEdition(page);
+  const pill = page.getByText('Feeling roasted?');
+  await expect(pill).toBeHidden();
+  await page.mouse.wheel(0, 4000);
+  await expect(pill).toBeVisible();
+  await pill.locator('..').getByRole('button', { name: 'Hype me up' }).click();
+  await expect(page).toHaveURL(/\?age=24&mode=hype$/);
+});
+
+test('the ticker runs the front page headlines', async ({ page }) => {
+  await offline(page);
+  await page.goto('./?age=24');
+  await expect(page.getByText('Breaking', { exact: true })).toBeVisible();
+  await waitForEdition(page);
+  await expect(page.getByText(/^At 24, /).first()).toBeAttached();
 });
 
 test('impossible ages are explained, not searched', async ({ page }) => {

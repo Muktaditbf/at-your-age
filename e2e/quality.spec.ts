@@ -54,9 +54,12 @@ test('the form works with the keyboard alone', async ({ page }) => {
   await page.keyboard.press('ArrowUp');
   await expect(age).toHaveValue('31');
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('slider', { name: 'Your age' })).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Roast me' })).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\?age=31$/);
+  await expect(page).toHaveURL(/\?age=32$/);
   // The results heading takes focus so screen readers land on the news.
-  await expect(page.getByRole('heading', { name: 'What famous people did at 31' })).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'What famous people did at 32' })).toBeFocused();
 });

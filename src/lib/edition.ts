@@ -1,11 +1,13 @@
 /**
- * Runs one "edition": the five searches for an age and mode, plus photos and bios.
- * Stories appear as each search finishes. Nothing is cached: every edition asks Wikidata fresh.
+ * Runs one "edition": the five searches for an age and mode, plus photos, bios and popularity.
+ * Each desk's stories appear once Wikipedia has answered for them (or after a short wait), so
+ * they arrive with their photo and in popularity order. Nothing is cached: every edition asks
+ * Wikidata fresh.
  */
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { type FailureReason, QueryFailed, runLimited, runQuery } from './qlever.ts';
 import { buildQuery, KINDS, type Kind, type Mode } from './sparql.ts';
-import { mergeStories, type Story, storiesFromRows } from './stories.ts';
+import { compareStories, mergeStories, type Story, storiesFromRows } from './stories.ts';
 import { fetchPeople, type PersonInfo, titleFromUrl } from './wikipedia.ts';
 
 export type DeskStatus = 'waiting' | 'working' | 'done' | 'failed';
@@ -18,6 +20,8 @@ export interface Edition {
   status: 'loading' | 'done';
   /** True once every desk has answered at least once; stays true while retrying failed desks. */
   printed: boolean;
+  /** The lead story, picked when the page is first printed so it doesn't jump around later. */
+  leadId?: string;
   stories: Story[];
   /** Photos and bios by Wikidata ID. Missing until Wikipedia answers (or if it doesn't). */
   people: Record<string, PersonInfo>;
@@ -37,7 +41,36 @@ const allDesks = (status: DeskStatus) =>
 
 function settle(edition: Edition): Edition {
   const busy = KINDS.some((k) => edition.desks[k] === 'waiting' || edition.desks[k] === 'working');
-  return { ...edition, status: busy ? 'loading' : 'done', printed: edition.printed || !busy };
+  const printed = edition.printed || !busy;
+  return {
+    ...edition,
+    status: busy ? 'loading' : 'done',
+    printed,
+    leadId: edition.leadId ?? (printed ? pickLead(edition.stories)?.id : undefined),
+  };
+}
+
+/**
+ * The most popular story leads the page, except politics: a sitting president as the "Roasted"
+ * or "Still time" hero would put off half the readers, so offices stay in the list below.
+ */
+export function pickLead(stories: Story[]): Story | undefined {
+  return stories.find((story) => story.deeds[0]?.kind !== 'position') ?? stories[0];
+}
+
+/** Stories in page order: the lead first, then everyone else by popularity. */
+export function frontPage(edition: Edition): Story[] {
+  const lead = edition.stories.find((story) => story.id === edition.leadId);
+  return lead ? [lead, ...edition.stories.filter((story) => story !== lead)] : edition.stories;
+}
+
+/** Copies known page views onto the stories, so they can be ranked by them. */
+export function withViews(stories: Story[], people: Record<string, PersonInfo> | undefined) {
+  if (!people) return stories;
+  return stories.map((story) => {
+    const views = people[story.id]?.views;
+    return views === undefined || story.views !== undefined ? story : { ...story, views };
+  });
 }
 
 export function reducer(state: Edition | undefined, action: Action): Edition | undefined {
@@ -55,6 +88,7 @@ export function reducer(state: Edition | undefined, action: Action): Edition | u
       run: action.run,
       status: 'loading',
       printed: keep ? state.printed : false,
+      leadId: keep ? state.leadId : undefined,
       stories: keep ? state.stories : [],
       people: keep ? state.people : {},
       desks,
@@ -78,11 +112,18 @@ export function reducer(state: Edition | undefined, action: Action): Edition | u
         failures: { ...state.failures, [action.kind]: action.reason },
       });
     case 'people':
-      return { ...state, people: { ...state.people, ...action.people } };
+      return {
+        ...state,
+        people: { ...state.people, ...action.people },
+        stories: withViews(state.stories, action.people).sort(compareStories),
+      };
   }
 }
 
 let runCounter = 0;
+
+/** How long a desk waits for Wikipedia before printing its stories without photos. */
+export const WIKIPEDIA_WAIT_MS = 2500;
 
 /** Runs the edition for `age` + `mode` whenever they change. */
 export function useEdition(age: number | undefined, mode: Mode) {
@@ -108,7 +149,7 @@ export function useEdition(age: number | undefined, mode: Mode) {
           askedWikipedia.current.add(story.id);
           wanted.set(title, story.id);
         }
-        if (!wanted.size) return;
+        if (!wanted.size) return {};
         try {
           const found = await fetchPeople([...wanted.keys()], abort.signal);
           const people: Record<string, PersonInfo> = {};
@@ -117,9 +158,11 @@ export function useEdition(age: number | undefined, mode: Mode) {
             if (id) people[id] = info;
           }
           dispatch({ type: 'people', run, people });
+          return people;
         } catch {
           // Photos and bios are a bonus. Stories still work without them.
           for (const id of wanted.values()) askedWikipedia.current.delete(id);
+          return {};
         }
       };
 
@@ -132,8 +175,13 @@ export function useEdition(age: number | undefined, mode: Mode) {
         try {
           const rows = await runQuery(buildQuery(kind, mode, age), { signal: abort.signal });
           const stories = storiesFromRows(kind, rows, mode, age);
-          dispatch({ type: 'desk', run, kind, stories });
-          void lookUpPeople(stories);
+          // Wait a moment for photos and popularity, so stories arrive complete and in order.
+          const people = await Promise.race([
+            lookUpPeople(stories),
+            new Promise<undefined>((resolve) => setTimeout(resolve, WIKIPEDIA_WAIT_MS)),
+          ]);
+          if (abort.signal.aborted) return;
+          dispatch({ type: 'desk', run, kind, stories: withViews(stories, people) });
         } catch (error) {
           if (abort.signal.aborted) return;
           const reason = error instanceof QueryFailed ? error.reason : 'server';

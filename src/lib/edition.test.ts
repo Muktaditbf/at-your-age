@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type Edition, reducer } from './edition.ts';
+import { type Edition, frontPage, pickLead, reducer, withViews } from './edition.ts';
 import { KINDS } from './sparql.ts';
 import type { Story } from './stories.ts';
 
@@ -116,5 +116,72 @@ describe('edition reducer', () => {
       people: { Q1: { description: 'Someone' } },
     });
     expect(state?.people.Q1?.description).toBe('Someone');
+  });
+});
+
+describe('popularity and the lead story', () => {
+  const deed = (kind: 'work' | 'position') => ({
+    kind,
+    thingId: 'T',
+    thing: 'Thing',
+    verb: 'does',
+    date: { year: 1980, month: 1, day: 1, precision: 'year' as const },
+    age: { years: 30, exact: false },
+    thingFame: 1,
+  });
+  const person = (id: string, fame: number, kind: 'work' | 'position' = 'work'): Story => ({
+    ...story(id, fame),
+    deeds: [deed(kind)],
+  });
+
+  it('copies page views onto stories', () => {
+    const [a, b] = withViews([person('Q1', 10), person('Q2', 10)], { Q1: { views: 99 } });
+    expect(a?.views).toBe(99);
+    expect(b?.views).toBeUndefined();
+  });
+
+  it('re-sorts when page views arrive', () => {
+    let state = started();
+    state = reducer(state, {
+      type: 'desk',
+      run: 1,
+      kind: 'work',
+      stories: [person('Q1', 100), person('Q2', 50)],
+    }) as Edition;
+    state = reducer(state, {
+      type: 'people',
+      run: 1,
+      people: { Q2: { views: 1_000_000 } },
+    }) as Edition;
+    expect(state.stories.map((s) => s.id)).toEqual(['Q2', 'Q1']);
+  });
+
+  it('never leads with politics when there is anything else', () => {
+    expect(pickLead([person('President', 300, 'position'), person('Singer', 100)])?.id).toBe(
+      'Singer',
+    );
+    expect(pickLead([person('President', 300, 'position')])?.id).toBe('President');
+  });
+
+  it('pins the lead once printed and puts it first', () => {
+    let state = started();
+    for (const kind of KINDS) {
+      state = reducer(state, {
+        type: 'desk',
+        run: 1,
+        kind,
+        stories:
+          kind === 'work' ? [person('President', 300, 'position'), person('Singer', 100)] : [],
+      }) as Edition;
+    }
+    expect(state.leadId).toBe('Singer');
+    expect(frontPage(state).map((s) => s.id)).toEqual(['Singer', 'President']);
+    // Later popularity changes don't move the lead.
+    state = reducer(state, {
+      type: 'people',
+      run: 1,
+      people: { President: { views: 9e9 } },
+    }) as Edition;
+    expect(frontPage(state)[0]?.id).toBe('Singer');
   });
 });

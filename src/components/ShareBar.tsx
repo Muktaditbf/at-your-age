@@ -4,9 +4,10 @@
  */
 import { Check, Download, Link2, Share2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Edition } from '../lib/edition.ts';
+import { type Edition, frontPage } from '../lib/edition.ts';
 import { dateline, headline } from '../lib/headline.ts';
 import { runway } from '../lib/lines.ts';
+import { POP_HEX } from '../lib/pop.ts';
 import { type CardInput, canvasToBlob, renderCard } from '../lib/shareCard.ts';
 import { shareUrl } from '../lib/url.ts';
 import { photoUrl } from '../lib/wikipedia.ts';
@@ -29,19 +30,24 @@ function cardInput(edition: Edition, line: string): CardInput {
     line,
     paperName: PAPERS[mode].name,
     site: siteName(),
-    stories: edition.stories.slice(0, 3).map((story) => {
-      const deed = story.deeds[0];
-      const photo = edition.people[story.id]?.photo;
-      return {
-        name: story.name,
-        headline: deed ? headline(story.name, deed.verb, deed.kind, deed.thing) : story.name,
-        dateline: deed ? dateline(deed, mode, age) : '',
-        deck: edition.people[story.id]?.description,
-        badge:
-          deed && mode === 'hype' ? `At ${deed.age.exact ? '' : '~'}${deed.age.years}` : undefined,
-        photoUrl: photo ? photoUrl(photo, 500) : undefined,
-      };
-    }),
+    stories: frontPage(edition)
+      .slice(0, 3)
+      .map((story) => {
+        const deed = story.deeds[0];
+        const photo = edition.people[story.id]?.photo;
+        return {
+          name: story.name,
+          headline: deed ? headline(story.name, deed.verb, deed.kind, deed.thing) : story.name,
+          dateline: deed ? dateline(deed, mode, age) : '',
+          deck: edition.people[story.id]?.description,
+          badge:
+            deed && mode === 'hype'
+              ? `At ${deed.age.exact ? '' : '~'}${deed.age.years}`
+              : undefined,
+          photoUrl: photo ? photoUrl(photo, 500) : undefined,
+          pop: deed ? POP_HEX[deed.kind] : undefined,
+        };
+      }),
   };
 }
 
@@ -87,11 +93,14 @@ export function ShareBar({ edition, line }: { edition: Edition; line: string }) 
     [],
   );
 
-  const lead = edition.stories[0]?.deeds[0];
+  const [top] = frontPage(edition);
+  const lead = top?.deeds[0];
   const text =
     edition.mode === 'roast'
-      ? `At ${edition.age}, ${edition.stories[0]?.name ?? 'someone famous'} had already done more than me. My front page:`
-      : `At ${edition.age}, I've still got ${lead ? runway(lead.age.years - edition.age) : 'plenty of runway'}. My front page:`;
+      ? lead && top
+        ? `At ${edition.age}, ${headline(top.name, lead.verb, lead.kind, lead.thing)}. Me at ${edition.age}: 💀 Check yours:`
+        : `My front page at ${edition.age} 💀 Check yours:`
+      : `At ${edition.age}, I've still got ${lead ? runway(lead.age.years - edition.age) : 'plenty of runway'}. Late bloomer era 🌱 Check yours:`;
 
   const canShareFile =
     typeof navigator !== 'undefined' &&

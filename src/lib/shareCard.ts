@@ -1,6 +1,6 @@
 /**
  * Draws the shareable front page (1080×1350, the portrait size Instagram and WhatsApp like).
- * Roast photos get a real halftone screen; hype photos stay in colour, cut as arches.
+ * Roast photos sit in black frames with pop-colour shadows; hype photos are cut as arches.
  * Wikimedia images allow cross-origin use, so the canvas stays exportable.
  */
 import type { Mode } from './sparql.ts';
@@ -18,6 +18,8 @@ export interface CardStory {
   /** Short label on the photo in the hype edition: "At 50". */
   badge?: string;
   photoUrl?: string;
+  /** The desk's pop colour, for the photo's offset frame in the roast edition. */
+  pop?: string;
 }
 
 export interface CardInput {
@@ -159,58 +161,6 @@ function coverRect(img: HTMLImageElement, w: number, h: number) {
   return { sx, sy, sw, sh };
 }
 
-function drawHalftone(
-  ctx: Ctx,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  ink: string,
-  paper: string,
-) {
-  const cell = Math.max(3.5, w / 60);
-  const cols = Math.ceil(w / cell);
-  const rows = Math.ceil(h / cell);
-  const small = document.createElement('canvas');
-  small.width = cols;
-  small.height = rows;
-  const sctx = small.getContext('2d', { willReadFrequently: true });
-  if (!sctx) return;
-  const { sx, sy, sw, sh } = coverRect(img, w, h);
-  sctx.drawImage(img, sx, sy, sw, sh, 0, 0, cols, rows);
-  const { data } = sctx.getImageData(0, 0, cols, rows);
-  const lums = new Float32Array(cols * rows);
-  for (let i = 0; i < lums.length; i++) {
-    const o = i * 4;
-    lums[i] =
-      (0.299 * (data[o] ?? 0) + 0.587 * (data[o + 1] ?? 0) + 0.114 * (data[o + 2] ?? 0)) / 255;
-  }
-  // Stretch the tones so dark old portraits still read as faces.
-  const sorted = Float32Array.from(lums).sort();
-  const lo = sorted[Math.floor(sorted.length * 0.02)] ?? 0;
-  const hi = sorted[Math.floor(sorted.length * 0.98)] ?? 1;
-  const range = Math.max(0.15, hi - lo);
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(x, y, w, h);
-  ctx.clip();
-  ctx.fillStyle = paper;
-  ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = ink;
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      const level = Math.min(1, Math.max(0, ((lums[row * cols + col] ?? 0) - lo) / range));
-      const radius = cell * 0.68 * Math.sqrt(1 - level ** 0.85);
-      if (radius < 0.3) continue;
-      ctx.beginPath();
-      ctx.arc(x + col * cell + cell / 2, y + row * cell + cell / 2, radius, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-  ctx.restore();
-}
-
 function archPath(ctx: Ctx, x: number, y: number, w: number, h: number) {
   const r = w / 2;
   ctx.beginPath();
@@ -230,6 +180,7 @@ function drawPhoto(
   y: number,
   w: number,
   h: number,
+  pop?: string,
 ) {
   const p = PALETTES[mode];
   if (mode === 'hype') {
@@ -250,10 +201,15 @@ function drawPhoto(
     }
     ctx.restore();
   } else {
-    if (img) drawHalftone(ctx, img, x, y, w, h, p.ink, p.paper);
-    else {
-      ctx.fillStyle = p.paper2;
-      ctx.fillRect(x, y, w, h);
+    // Colour photo in a black frame, with a hard shadow in the desk's pop colour.
+    const shadow = Math.round(w * 0.045);
+    ctx.fillStyle = pop ?? p.accent;
+    ctx.fillRect(x + shadow, y + shadow, w, h);
+    ctx.fillStyle = p.paper2;
+    ctx.fillRect(x, y, w, h);
+    if (img) {
+      const { sx, sy, sw, sh } = coverRect(img, w, h);
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
     }
     ctx.lineWidth = 5;
     ctx.strokeStyle = p.ink;
@@ -390,7 +346,7 @@ export async function renderCard(input: CardInput): Promise<HTMLCanvasElement> {
   if (lead) {
     const pw = 340;
     const ph = 425;
-    drawPhoto(ctx, mode, images[0], lead.name, M, y, pw, ph);
+    drawPhoto(ctx, mode, images[0], lead.name, M, y, pw, ph, lead.pop);
     // Bottom corner: faces are usually higher up.
     if (lead.badge) drawBadge(ctx, mode, lead.badge, M + 14, y + ph - 64, 34);
     else drawStamp(ctx, mode, M + pw - 112, y + ph - 64);
@@ -426,7 +382,7 @@ export async function renderCard(input: CardInput): Promise<HTMLCanvasElement> {
       const x = M + i * (colW + 40);
       const pw = 140;
       const ph = 175;
-      drawPhoto(ctx, mode, images[i + 1], story.name, x, y, pw, ph);
+      drawPhoto(ctx, mode, images[i + 1], story.name, x, y, pw, ph, story.pop);
       if (story.badge) drawBadge(ctx, mode, story.badge, x + 8, y + ph - 42, 22);
       const tx = x + pw + 22;
       const tw = colW - pw - 22;

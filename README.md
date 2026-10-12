@@ -25,17 +25,20 @@ Get roasted, or get hyped.
 You type an age. The app prints a newspaper front page about it, using live facts from Wikidata.
 
 - **Roast edition, _The Daily Disappointment_:** what famous people did at exactly your age.
-  "At 24, Michael Jackson releases ‘Thriller’. _Meanwhile, you:_ reheated the same coffee three times."
+  "At 24, Lionel Messi wins the Ballon d'Or. _Meanwhile, you:_ 6 hours of screen time, 0 minutes on
+  the thing you said you'd start."
 - **Hype edition, _The Late Bloomer Times_:** famous people who did their big thing _later_ than
   your age, and how much runway that gives you.
-  "Barack Obama becomes President of the United States. Age 47: 23 years of runway."
+  "Elon Musk founds SpaceX. Age 30: 6 years of runway. Main character energy. Your episode just
+  airs later."
 
-Flip between the two with one tap. Then share your front page as an image.
+Got roasted? One tap on **Hype me up** flips the paper to the hype edition for the same age. Then
+share your front page as an image.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/roast.png" width="250" alt="Roast edition: Michael Jackson releases Thriller at 24, with a ROASTED stamp"><br><sub><b>Roast</b>: what they did at your age</sub></td>
-    <td align="center"><img src="docs/screenshots/hype.png" width="250" alt="Hype edition: Barack Obama becomes President at 47, with a Still time ribbon"><br><sub><b>Hype</b>: who did it later than you</sub></td>
+    <td align="center"><img src="docs/screenshots/roast.png" width="250" alt="Roast edition: Lionel Messi wins the Ballon d'Or at 24, with a ROASTED stamp"><br><sub><b>Roast</b>: what they did at your age</sub></td>
+    <td align="center"><img src="docs/screenshots/hype.png" width="250" alt="Hype edition: Lionel Messi wins the Ballon d'Or at 34, with a Still time ribbon"><br><sub><b>Hype</b>: who did it later than you</sub></td>
     <td align="center"><img src="docs/screenshots/night.png" width="250" alt="The roast edition in night mode"><br><sub><b>Night print</b> follows your system</sub></td>
   </tr>
   <tr>
@@ -51,21 +54,28 @@ Flip between the two with one tap. Then share your front page as an image.
 
 - 🗞️ **Two editions of one paper.** A red-top tabloid for roasts and a sunny paper for hype.
   Switching flips the whole page over.
-- ⌨️ **The headline is the form.** The page says "At _your age_…"; type over "your age" and press
-  Enter. Quick picks and +/− buttons help on phones.
+- 🌱 **Hype me up.** After a roast, a card (and a pill that follows you down the page) takes you
+  to the hype edition for the same age, with a burst of petals.
+- 📏 **Age ruler.** Swipe a measuring tape of years, or type over "your age" in the headline. The
+  digits roll like an odometer, and the button says "Roast me at 30" until you ask again.
+- 🔥 **Popular people first.** Stories are ranked by how much people read about them on Wikipedia
+  this month, so you get Messi and Michael Jackson before medieval kings.
+- 🎨 **Colourful pages.** Full-colour photos with a pop-colour frame per newsroom desk
+  (music & film, awards, crowns & offices, business, science).
+- 📰 **Breaking-news ticker** running your front page's headlines; it slows down under the
+  pointer so you can read it.
 - 📡 **Always live.** Every search asks Wikidata fresh. Nothing is cached, so new facts show up as
   soon as volunteers add them.
-- ⏳ **Fun while you wait.** "Stop the presses!" shows which of the five newsroom desks has
-  answered, and stories appear as they arrive. The first ones usually show up within about
-  4 seconds.
+- ⏳ **Fun while you wait.** "Stop the presses!" types out what the newsroom is doing and shows which
+  of the five desks has answered. The first stories usually show up within about 4 seconds.
 - 🧾 **Honest ages.** When Wikidata only knows the year, the paper says "around age 24" instead
   of pretending. Every story links to its source.
-- 📤 **Share card.** A 1080×1350 image (halftone photos for roasts, colour arches for hype) shared
+- 📤 **Share card.** A 1080×1350 image (pop-colour frames for roasts, arches for hype) shared
   through your phone's share menu, or downloaded.
 - 🔗 **Links that work.** `?age=24&mode=hype` opens that front page directly, and Back goes back.
   Shared links show a proper title and preview image.
-- ♿ **Accessible.** Works with a keyboard and screen readers, respects reduced motion, and is
-  checked with axe in both editions, by day and by night.
+- ♿ **Accessible.** Works with a keyboard and screen readers (the ruler is a real slider), respects
+  reduced motion, and is checked with axe in both editions, by day and by night.
 
 ## Where the facts come from
 
@@ -83,9 +93,12 @@ Flip between the two with one tap. Then share your front page as an image.
    from the University of Freiburg. The official Wikidata endpoint needed 17–47 seconds for these
    questions; QLever answers in about 3–6. At most three searches run at once, and if the server
    says "slow down", the app waits and asks again.
-3. **Photos and one-line bios** come from English Wikipedia, 50 people per request.
-4. "Famous" means many Wikipedia language editions have an article about the person (and the
-   thing they did). The hype edition asks for a bit more fame.
+3. **Photos, one-line bios and popularity** come from English Wikipedia, 50 people per request:
+   page views over the last 30 days decide the order, so people readers care about now come first.
+4. To be found at all, a person (and the thing they did) needs articles in many Wikipedia language
+   editions. The hype edition asks for a bit more fame.
+5. The lead story is the most popular one, except politics: offices stay in the list below, so a
+   sitting president is never the "Roasted" or "Still time" hero.
 
 **Honesty rules:**
 
@@ -113,7 +126,9 @@ Flip between the two with one tap. Then share your front page as an image.
 - **React 19**, **TypeScript** (strict) and **Vite 8**
 - **Tailwind CSS v4** with two editions × two prints of design tokens
 - **SPARQL** on [QLever](https://qlever.dev/wikidata), plus the Wikipedia API
-- **Canvas** for the share card, including a real halftone screen
+- **[Motion](https://motion.dev)** (free) for the animations: rolling digits, the ticker, card
+  layout animations, the stamp, the petals; its features load after the first paint
+- **Canvas** for the share card
 - **zod** (mini) to check every answer from the servers
 - **Vitest** unit tests and **Playwright** end-to-end tests on phone and desktop sizes, against
   recorded real answers, including failure and retry paths and **axe** accessibility checks
@@ -128,10 +143,11 @@ src/
 ├── lib/headline.ts    # "Michael Jackson releases ‘Thriller’"
 ├── lib/wikipedia.ts   # photos and one-line bios
 ├── lib/lines.ts       # everything the paper says that isn't a fact ← PRs welcome!
+├── lib/ruler.ts       # the age ruler's math
 ├── lib/shareCard.ts   # the shareable front page, drawn on a canvas
 ├── lib/edition.ts     # runs one edition: searches, progress, retries
 ├── data/blocklist.ts  # people the paper leaves out
-└── components/        # masthead, the age form, stories, the press room, sharing
+└── components/        # masthead, ticker, age form + ruler, stories, comeback, sharing
 ```
 
 ## Run it locally

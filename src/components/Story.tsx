@@ -1,8 +1,11 @@
 /** One person's story: a photo, a headline, the Wikipedia one-liner and when it happened. */
 import { ExternalLink } from 'lucide-react';
-import { useState } from 'react';
+import { m, useMotionValue, useSpring } from 'motion/react';
+import { type CSSProperties, type PointerEvent, useState } from 'react';
 import { dateline, headline, thingText } from '../lib/headline.ts';
-import type { Mode } from '../lib/sparql.ts';
+import { DESK_TAGS } from '../lib/lines.ts';
+import { POP_INDEX } from '../lib/pop.ts';
+import type { Kind, Mode } from '../lib/sparql.ts';
 import type { Deed, Story as StoryData } from '../lib/stories.ts';
 import { type PersonInfo, photoSrcSet, photoUrl } from '../lib/wikipedia.ts';
 
@@ -62,6 +65,20 @@ export function Photo({
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
+/** Each desk has its own pop colour, used for the photo frame and the tag. */
+export function popStyle(kind: Kind): CSSProperties {
+  const n = POP_INDEX[kind];
+  return { '--pop': `var(--pop-${n})`, '--on-pop': `var(--on-pop-${n})` } as CSSProperties;
+}
+
+function DeskTag({ kind }: { kind: Kind }) {
+  return (
+    <span className="inline-block rounded-full bg-[var(--pop)] px-2.5 py-0.5 text-[0.8rem] leading-5 font-bold text-[var(--on-pop)]">
+      {DESK_TAGS[kind]}
+    </span>
+  );
+}
+
 function MoreDeeds({ deeds, mode, age }: { deeds: Deed[]; mode: Mode; age: number }) {
   const [open, setOpen] = useState(false);
   if (!deeds.length) return null;
@@ -109,11 +126,18 @@ function WikipediaLink({ story }: { story: StoryData }) {
   );
 }
 
-export function StoryCard({ story, info, mode, age }: StoryProps) {
+export function StoryCard({ story, info, mode, age, index }: StoryProps & { index: number }) {
   const [best, ...rest] = story.deeds;
   if (!best) return null;
   return (
-    <article className="grid min-w-0 grid-cols-[6.75rem_minmax(0,1fr)] gap-x-4 sm:flex sm:flex-col">
+    <m.article
+      layout="position"
+      initial={{ opacity: 0, y: 28, rotate: index % 2 ? 1.5 : -1.5, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 340, damping: 28, delay: Math.min(index, 8) * 0.04 }}
+      style={popStyle(best.kind)}
+      className="grid min-w-0 grid-cols-[6.75rem_minmax(0,1fr)] gap-x-4 sm:flex sm:flex-col"
+    >
       <div className="relative self-start sm:self-auto">
         <Photo
           info={info}
@@ -124,7 +148,10 @@ export function StoryCard({ story, info, mode, age }: StoryProps) {
         {mode === 'hype' && <AgeBadge years={best.age.years} exact={best.age.exact} />}
       </div>
       <div className="min-w-0">
-        <h3 className="display m-0 text-[1.45rem] leading-[1.02] [overflow-wrap:anywhere] sm:mt-4 sm:text-[1.75rem]">
+        <div className="mb-1.5 sm:mt-4">
+          <DeskTag kind={best.kind} />
+        </div>
+        <h3 className="display m-0 text-[1.45rem] leading-[1.02] [overflow-wrap:anywhere] sm:text-[1.75rem]">
           {headline(story.name, best.verb, best.kind, best.thing)}
         </h3>
         {info?.description && (
@@ -136,7 +163,7 @@ export function StoryCard({ story, info, mode, age }: StoryProps) {
         <MoreDeeds deeds={rest} mode={mode} age={age} />
         <WikipediaLink story={story} />
       </div>
-    </article>
+    </m.article>
   );
 }
 
@@ -148,27 +175,61 @@ function AgeBadge({ years, exact }: { years: number; exact: boolean }) {
   );
 }
 
+/** Tilts the lead photo a little towards the mouse. Touch and pens leave it flat. */
+function useTilt() {
+  const rotateX = useMotionValue(0);
+  const rotateY = useMotionValue(0);
+  const springX = useSpring(rotateX, { stiffness: 220, damping: 18 });
+  const springY = useSpring(rotateY, { stiffness: 220, damping: 18 });
+  return {
+    style: { rotateX: springX, rotateY: springY, transformPerspective: 900 },
+    onPointerMove: (event: PointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== 'mouse') return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      rotateY.set(((event.clientX - rect.left) / rect.width - 0.5) * 10);
+      rotateX.set(-((event.clientY - rect.top) / rect.height - 0.5) * 10);
+    },
+    onPointerLeave: () => {
+      rotateX.set(0);
+      rotateY.set(0);
+    },
+  };
+}
+
 export function LeadStory({ story, info, mode, age, line }: StoryProps & { line: string }) {
   const [best, ...rest] = story.deeds;
+  const tilt = useTilt();
   if (!best) return null;
   return (
-    <article className="grid gap-x-8 gap-y-5 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-      <div className="relative">
+    <article
+      style={popStyle(best.kind)}
+      className="grid gap-x-8 gap-y-5 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
+    >
+      <m.div
+        className="relative"
+        style={tilt.style}
+        onPointerMove={tilt.onPointerMove}
+        onPointerLeave={tilt.onPointerLeave}
+      >
         <Photo
           info={info}
           name={story.name}
           sizes="(min-width: 768px) 30rem, 92vw"
           eager
-          className="aspect-[4/5] max-h-[34rem] w-full"
+          className="lead-photo aspect-[4/5] max-h-[34rem] w-full"
         />
-        <span
-          className={`stamp stamp-slap absolute top-4 right-3 text-[clamp(1.6rem,7vw,2.6rem)] ${mode === 'roast' ? '[--tilt:-11deg]' : '[--tilt:-6deg]'}`}
+        <m.span
+          initial={{ scale: 2.4, rotate: -24, opacity: 0 }}
+          animate={{ scale: 1, rotate: mode === 'roast' ? -11 : -6, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 420, damping: 16, delay: 0.2 }}
+          className="stamp absolute top-4 right-3 text-[clamp(1.6rem,7vw,2.6rem)]"
         >
           {mode === 'roast' ? 'Roasted' : 'Still time'}
-        </span>
-      </div>
+        </m.span>
+      </m.div>
       <div className="min-w-0">
-        <h3 className="display m-0 text-[clamp(2.4rem,9.5vw,4.6rem)] leading-[0.95] [overflow-wrap:anywhere]">
+        <DeskTag kind={best.kind} />
+        <h3 className="display m-0 mt-2 text-[clamp(2.4rem,9.5vw,4.6rem)] leading-[0.95] [overflow-wrap:anywhere]">
           {headline(story.name, best.verb, best.kind, best.thing)}
         </h3>
         {info?.description && <p className="m-0 mt-3 text-xl text-muted">{info.description}</p>}

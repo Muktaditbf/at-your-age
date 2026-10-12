@@ -1,15 +1,23 @@
+import { LazyMotion, MotionConfig } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { AgeForm } from './components/AgeForm.tsx';
 import { Footer } from './components/Footer.tsx';
 import { Masthead, PAPERS } from './components/Masthead.tsx';
+import { PetalBurst } from './components/PetalBurst.tsx';
 import { Results } from './components/Results.tsx';
+import { Ticker } from './components/Ticker.tsx';
+import { useEdition } from './lib/edition.ts';
 import type { Mode } from './lib/sparql.ts';
 import { useSearch } from './lib/useSearch.ts';
 
+const loadFeatures = () => import('./lib/motionFeatures.ts').then((module) => module.default);
+
 export function App() {
   const [search, navigate] = useSearch();
+  const { edition, retryFailed } = useEdition(search.age, search.mode);
   const [focusToken, setFocusToken] = useState(0);
+  const [burst, setBurst] = useState<{ x: number; y: number; id: number }>();
   const paper = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,26 +61,48 @@ export function App() {
     }
   };
 
+  /** "Hype me up" after a roast: same age, the other paper, petals, and on to the stories. */
+  const hypeMeUp = async (from: { x: number; y: number }) => {
+    const id = Date.now();
+    setBurst({ ...from, id });
+    setTimeout(() => setBurst((current) => (current?.id === id ? undefined : current)), 2000);
+    await switchMode('hype');
+    setFocusToken((token) => token + 1);
+  };
+
   return (
-    <div className="[perspective:2400px]">
-      <div ref={paper} className="min-h-dvh [backface-visibility:hidden]">
-        <Masthead mode={search.mode} onModeChange={switchMode} />
-        <main id="main">
-          <h1 className="sr-only">At Your Age: what had famous people done by your age?</h1>
-          <AgeForm
-            age={search.age}
-            mode={search.mode}
-            onSubmit={(age) => {
-              navigate({ age, mode: search.mode });
-              setFocusToken((token) => token + 1);
-            }}
-          />
-          {search.age !== undefined && (
-            <Results age={search.age} mode={search.mode} focusToken={focusToken} />
-          )}
-        </main>
-        <Footer />
-      </div>
-    </div>
+    <LazyMotion features={loadFeatures} strict>
+      <MotionConfig reducedMotion="user">
+        <div className="[perspective:2400px]">
+          <div ref={paper} className="min-h-dvh [backface-visibility:hidden]">
+            <Masthead mode={search.mode} onModeChange={switchMode} />
+            <Ticker mode={search.mode} edition={edition} />
+            <main id="main">
+              <h1 className="sr-only">At Your Age: what had famous people done by your age?</h1>
+              <AgeForm
+                age={search.age}
+                mode={search.mode}
+                onSubmit={(age) => {
+                  navigate({ age, mode: search.mode });
+                  setFocusToken((token) => token + 1);
+                }}
+              />
+              {search.age !== undefined && (
+                <Results
+                  age={search.age}
+                  mode={search.mode}
+                  edition={edition}
+                  onRetry={retryFailed}
+                  onHypeMeUp={hypeMeUp}
+                  focusToken={focusToken}
+                />
+              )}
+            </main>
+            <Footer />
+          </div>
+        </div>
+        {burst && <PetalBurst key={burst.id} x={burst.x} y={burst.y} />}
+      </MotionConfig>
+    </LazyMotion>
   );
 }

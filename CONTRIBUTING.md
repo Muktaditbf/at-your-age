@@ -10,6 +10,12 @@ Everything the paper says that isn't a fact lives in [`src/lib/lines.ts`](src/li
 - `HYPES`: the hype edition's encouragement
 - `CLASSIFIEDS`: the little ads between stories
 - `PRESS_LINES`: what the press room says while it searches
+- `TEASERS`: the ticker's jokes before any stories are in
+
+Hype lines may use `{gap}`, which becomes the lead story's years of runway.
+
+The voice is relatable modern life with a little Gen Z slang now and then ("no cap", "it's
+giving", "main character", "delulu"). One slang word per line at most; most lines need none.
 
 A good line:
 

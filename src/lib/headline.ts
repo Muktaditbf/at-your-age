@@ -63,6 +63,8 @@ export function verbFor(kind: Kind, hints: VerbHints): string {
     case 'award': {
       if (/(Person|Man|Woman|Athlete|Player) of the Year/.test(hints.thing)) return 'is named';
       if (/\b100\b|30 Under 30/.test(hints.thing)) return 'makes';
+      if (/Hall of Fame/i.test(hints.thing)) return 'enters';
+      if (/\b(Order|Medal|Cross|Legion|Decoration)\b/.test(hints.thing)) return 'receives';
       if (
         /^(Fellow|Member|Honorary|Knight|Dame|Companion|Commander|Officer|Grand Cross)\b/.test(
           hints.thing,

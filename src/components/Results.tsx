@@ -1,12 +1,15 @@
 /** The front page for one age: the press room while searching, then the stories. */
 import { Check, LoaderCircle, RotateCcw, X } from 'lucide-react';
+import { m } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
-import { type DeskStatus, useEdition } from '../lib/edition.ts';
+import { type DeskStatus, type Edition, frontPage } from '../lib/edition.ts';
 import { CLASSIFIEDS, DESKS, hash, leadLine, PRESS_LINES, pick } from '../lib/lines.ts';
 import type { FailureReason } from '../lib/qlever.ts';
 import { KINDS, type Kind, type Mode } from '../lib/sparql.ts';
+import { ComebackCard, ComebackPill } from './Comeback.tsx';
 import { ShareBar } from './ShareBar.tsx';
 import { Classified, LeadStory, StoryCard } from './Story.tsx';
+import { Typewriter } from './Typewriter.tsx';
 
 const PAGE = 24;
 const CLASSIFIED_EVERY = 9;
@@ -22,19 +25,26 @@ const FAILURES: Record<FailureReason, string> = {
 export function Results({
   age,
   mode,
+  edition,
+  onRetry,
+  onHypeMeUp,
   focusToken,
 }: {
   age: number;
   mode: Mode;
+  edition: Edition | undefined;
+  onRetry: () => void;
+  onHypeMeUp: (from: { x: number; y: number }) => void;
   focusToken: number;
 }) {
-  const { edition, retryFailed } = useEdition(age, mode);
   const current = edition && edition.age === age && edition.mode === mode ? edition : undefined;
   // How many stories are visible; a new search starts again from the first page.
   const searchKey = `${mode}:${age}`;
   const [paging, setPaging] = useState({ key: searchKey, shown: PAGE });
   const shown = paging.key === searchKey ? paging.shown : PAGE;
   const heading = useRef<HTMLHeadingElement>(null);
+  const comeback = useRef<HTMLElement>(null);
+  const end = useRef<HTMLDivElement>(null);
 
   // After the reader submits an age, bring the results into view.
   useEffect(() => {
@@ -44,15 +54,19 @@ export function Results({
     heading.current.focus({ preventScroll: true });
   }, [focusToken]);
 
-  const stories = current?.stories ?? [];
+  const page = current ? frontPage(current) : [];
   const done = current?.status === 'done';
   const failed = KINDS.filter((kind) => current?.desks[kind] === 'failed');
   const allFailed = done && failed.length === KINDS.length;
   const seed = hash(`${mode}:${age}:${current?.run ?? 0}`);
   // The lead story is chosen once the whole front page is in, then stays put during retries.
-  const [lead, ...others] = current?.printed ? stories : [undefined, ...stories];
+  const lead = current?.printed ? page[0] : undefined;
+  const others = lead ? page.slice(1) : page;
   const visible = others.slice(0, shown);
   const classifieds = CLASSIFIEDS[mode];
+  const leadDeed = lead?.deeds[0];
+  const line = leadLine(mode, seed, leadDeed ? leadDeed.age.years - age : undefined);
+  const showComeback = mode === 'roast' && Boolean(lead);
 
   const title =
     mode === 'roast' ? `What famous people did at ${age}` : `Who did their big thing after ${age}`;
@@ -73,7 +87,7 @@ export function Results({
           {title}
         </h2>
         <p className="m-0 text-muted" role="status" aria-live="polite">
-          {statusText(stories.length, done, failed)}
+          {statusText(page.length, done, failed)}
         </p>
       </div>
       <hr className="rule-thin" />
@@ -81,10 +95,10 @@ export function Results({
       {!done && <PressRoom mode={mode} desks={current?.desks} />}
 
       {allFailed && current && (
-        <Jammed reason={Object.values(current.failures)[0] ?? 'server'} onRetry={retryFailed} />
+        <Jammed reason={Object.values(current.failures)[0] ?? 'server'} onRetry={onRetry} />
       )}
 
-      {done && !allFailed && stories.length === 0 && <EmptyEdition age={age} mode={mode} />}
+      {done && !allFailed && page.length === 0 && <EmptyEdition age={age} mode={mode} />}
 
       {lead && (
         <div className="py-6 sm:py-8">
@@ -93,26 +107,27 @@ export function Results({
             info={current?.people[lead.id]}
             mode={mode}
             age={age}
-            line={leadLine(mode, seed)}
+            line={line}
           />
         </div>
       )}
 
+      {showComeback && <ComebackCard age={age} onHypeMeUp={onHypeMeUp} cardRef={comeback} />}
+
       {visible.length > 0 && (
         <>
-          {lead && <hr className="rule-heavy" />}
+          {lead && <hr className={`rule-heavy ${showComeback ? 'mt-8' : ''}`} />}
           <div className="grid gap-x-7 gap-y-7 py-7 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-3">
             {visible.flatMap((story, index) => {
               const items = [
-                story && (
-                  <StoryCard
-                    key={story.id}
-                    story={story}
-                    info={current?.people[story.id]}
-                    mode={mode}
-                    age={age}
-                  />
-                ),
+                <StoryCard
+                  key={story.id}
+                  index={index}
+                  story={story}
+                  info={current?.people[story.id]}
+                  mode={mode}
+                  age={age}
+                />,
               ];
               const slot = index + 1;
               if (done && slot % CLASSIFIED_EVERY === 0 && slot / CLASSIFIED_EVERY <= 3) {
@@ -143,15 +158,17 @@ export function Results({
             {failed.length === 1 ? 'One desk' : `${failed.length} desks`} did not answer:{' '}
             {failed.map((kind) => DESKS[kind]).join(', ')}.
           </p>
-          <RetryButton onClick={retryFailed}>
+          <RetryButton onClick={onRetry}>
             Try {failed.length === 1 ? 'it' : 'them'} again
           </RetryButton>
         </div>
       )}
 
-      {done && stories.length > 0 && current && (
-        <ShareBar edition={current} line={leadLine(mode, seed)} />
-      )}
+      <div ref={end}>
+        {done && page.length > 0 && current && <ShareBar edition={current} line={line} />}
+      </div>
+
+      {showComeback && <ComebackPill onHypeMeUp={onHypeMeUp} cardRef={comeback} endRef={end} />}
     </section>
   );
 }
@@ -167,7 +184,7 @@ function PressRoom({ mode, desks }: { mode: Mode; desks: Record<Kind, DeskStatus
   const lines = PRESS_LINES[mode];
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 1800);
+    const timer = setInterval(() => setTick((t) => t + 1), 2400);
     return () => clearInterval(timer);
   }, []);
   const finished = desks
@@ -178,7 +195,7 @@ function PressRoom({ mode, desks }: { mode: Mode; desks: Record<Kind, DeskStatus
     <div className="my-6 border-[3px] border-rule p-5 sm:p-7 in-data-[edition=hype]:rounded-3xl">
       <p className="display m-0 text-[clamp(2rem,8vw,3.4rem)] leading-none">Stop the presses!</p>
       <p className="m-0 mt-2 min-h-[1.6em] text-xl text-muted" aria-hidden="true">
-        {lines[tick % lines.length]}
+        <Typewriter text={lines[tick % lines.length] ?? ''} />
       </p>
       <div
         className="mt-4 h-2.5 overflow-hidden bg-paper-2 in-data-[edition=hype]:rounded-full"
@@ -188,9 +205,11 @@ function PressRoom({ mode, desks }: { mode: Mode; desks: Record<Kind, DeskStatus
         aria-valuemax={KINDS.length}
         aria-valuenow={finished}
       >
-        <div
-          className="h-full bg-accent transition-[width] duration-500"
-          style={{ width: `${Math.max(6, (finished / KINDS.length) * 100)}%` }}
+        <m.div
+          className="h-full bg-accent"
+          initial={{ width: '6%' }}
+          animate={{ width: `${Math.max(6, (finished / KINDS.length) * 100)}%` }}
+          transition={{ type: 'spring', stiffness: 120, damping: 20 }}
         />
       </div>
       <ul className="m-0 mt-4 grid list-none gap-x-6 gap-y-1.5 p-0 sm:grid-cols-2">

@@ -40,7 +40,7 @@ describe('buildQuery', () => {
     expect(query.indexOf('BIND(YEAR(?date) - YEAR(?born) AS ?yd)')).toBeLessThan(
       query.indexOf('FILTER((?yd'),
     );
-    expect(query).toContain('LIMIT 60');
+    expect(query).toContain('LIMIT 80');
   });
 
   it('asks for verb hints only where they are used', () => {

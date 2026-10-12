@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CLASSIFIEDS,
+  DESK_TAGS,
   DESKS,
   HYPES,
   hash,
@@ -9,6 +10,7 @@ import {
   pick,
   ROASTS,
   runway,
+  TEASERS,
 } from './lines.ts';
 import { KINDS } from './sparql.ts';
 
@@ -21,7 +23,18 @@ describe('lines', () => {
   });
 
   it('keeps lines short enough for the share image', () => {
-    for (const line of [...ROASTS, ...HYPES]) expect(line.length).toBeLessThanOrEqual(80);
+    for (const line of [...ROASTS, ...HYPES.map((l) => l.replace('{gap}', '100'))]) {
+      expect(line.length).toBeLessThanOrEqual(80);
+    }
+  });
+
+  it('fills in the runway, and skips runway lines when there is none', () => {
+    for (let seed = 0; seed < HYPES.length; seed++) {
+      expect(leadLine('hype', seed, 26)).not.toContain('{gap}');
+      expect(leadLine('hype', seed)).not.toContain('{gap}');
+      expect(leadLine('hype', seed)).not.toContain('undefined');
+    }
+    expect(HYPES.some((l) => l.includes('{gap}'))).toBe(true);
   });
 
   it('has classifieds and press lines for both editions, and a desk for every search', () => {
@@ -29,7 +42,12 @@ describe('lines', () => {
     expect(CLASSIFIEDS.hype.length).toBeGreaterThan(2);
     expect(PRESS_LINES.roast.length).toBeGreaterThan(4);
     expect(PRESS_LINES.hype.length).toBeGreaterThan(4);
-    for (const kind of KINDS) expect(DESKS[kind]).toBeTruthy();
+    for (const kind of KINDS) {
+      expect(DESKS[kind]).toBeTruthy();
+      expect(DESK_TAGS[kind]).toBeTruthy();
+    }
+    expect(TEASERS.roast.length).toBeGreaterThan(2);
+    expect(TEASERS.hype.length).toBeGreaterThan(2);
   });
 
   it('picks the same line for the same search', () => {

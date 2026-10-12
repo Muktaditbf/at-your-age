@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchPeople, photoFrom, photoSrcSet, photoUrl, titleFromUrl } from './wikipedia.ts';
+import {
+  fetchPeople,
+  photoFrom,
+  photoSrcSet,
+  photoUrl,
+  titleFromUrl,
+  totalViews,
+} from './wikipedia.ts';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -55,6 +62,7 @@ describe('fetchPeople', () => {
               description: 'Russian novelist',
               thumbnail: { source: THUMB, width: 330, height: 440 },
               original: { source: 'x', width: 3000, height: 4000 },
+              pageviews: { '2026-10-10': 4000, '2026-10-11': 5000, '2026-10-12': null },
             },
             { title: 'Nobody', missing: true },
           ],
@@ -65,10 +73,13 @@ describe('fetchPeople', () => {
     const people = await fetchPeople(['Fyodor_Dostoevsky', 'Nobody']);
     expect(people.get('Fyodor_Dostoevsky')?.description).toBe('Russian novelist');
     expect(people.get('Fyodor_Dostoevsky')?.photo?.widths).toEqual([250, 330, 500, 960]);
+    expect(people.get('Fyodor_Dostoevsky')?.views).toBe(9000);
     expect(people.has('Nobody')).toBe(false);
     const url = new URL(String(fetchMock.mock.calls[0]?.[0 as never]));
     expect(url.searchParams.get('origin')).toBe('*');
     expect(url.searchParams.get('titles')).toBe('Fyodor_Dostoevsky|Nobody');
+    expect(url.searchParams.get('prop')).toContain('pageviews');
+    expect(url.searchParams.get('pvipdays')).toBe('30');
   });
 
   it('asks in batches of 50', async () => {
@@ -76,5 +87,12 @@ describe('fetchPeople', () => {
     vi.stubGlobal('fetch', fetchMock);
     await fetchPeople(Array.from({ length: 120 }, (_, i) => `Person ${i}`));
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('totalViews', () => {
+  it('adds up the days and skips days not counted yet', () => {
+    expect(totalViews({ a: 10, b: null, c: 5 })).toBe(15);
+    expect(totalViews({})).toBe(0);
   });
 });

@@ -32,6 +32,11 @@ describe('verbFor', () => {
     expect(verbFor('award', hints([], { thing: 'Time 100' }))).toBe('makes');
     expect(verbFor('award', hints([], { thing: 'Time Person of the Year' }))).toBe('is named');
     expect(verbFor('award', hints([], { thing: 'Fellow of the Royal Society' }))).toBe('becomes');
+    expect(verbFor('award', hints([], { thing: 'Rock and Roll Hall of Fame' }))).toBe('enters');
+    expect(verbFor('award', hints([], { thing: 'Order of the White Eagle' }))).toBe('receives');
+    expect(verbFor('award', hints([], { thing: 'Presidential Medal of Freedom' }))).toBe(
+      'receives',
+    );
   });
 
   it('tells discoveries from inventions', () => {

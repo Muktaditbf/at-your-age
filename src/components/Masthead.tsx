@@ -14,8 +14,8 @@ export const PAPERS: Record<Mode, { name: string; motto: string }> = {
 };
 
 const today = new Intl.DateTimeFormat('en', {
-  weekday: 'long',
-  month: 'long',
+  weekday: 'short',
+  month: 'short',
   day: 'numeric',
   year: 'numeric',
 }).format(new Date());
