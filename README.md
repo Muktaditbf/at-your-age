@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/banner.png" alt="At Your Age… A red tabloid front page saying 'At 24… Michael Jackson releases Thriller. Meanwhile, you: practiced your autograph.' next to a sunny 'Late Bloomer Times' page with Barack Obama, and a shareable front-page image." width="100%">
+<img src="docs/banner.png" alt="At Your Age… A red tabloid front page saying 'At 24, Lionel Messi wins the Ballon d'Or' with a ROASTED stamp, the sunny Late Bloomer Times showing Messi at 34 with a Still time ribbon, and a shareable front-page image." width="100%">
 
 # At Your Age…
 
@@ -15,6 +15,9 @@ Get roasted, or get hyped.
 [![License: MIT](https://img.shields.io/badge/license-MIT-d6000f?labelColor=000000)](LICENSE)
 [![Live data: Wikidata](https://img.shields.io/badge/live%20data-Wikidata-f2a900?labelColor=0f3d2e)](#where-the-facts-come-from)
 [![No tracking](https://img.shields.io/badge/tracking-none-f6f5f1?labelColor=000000)](#privacy)
+[![GitHub stars](https://img.shields.io/github/stars/Muktaditbf/at-your-age?style=social)](https://github.com/Muktaditbf/at-your-age/stargazers)
+
+<sub>If it made you laugh (or cry a little), a ⭐ helps other people find it.</sub>
 
 </div>
 

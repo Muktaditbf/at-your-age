@@ -1,5 +1,5 @@
 /** Credits, honesty notes and the theme switch. */
-import { Monitor, Moon, Sun } from 'lucide-react';
+import { Monitor, Moon, Star, Sun } from 'lucide-react';
 import { setTheme, type Theme, useTheme } from '../lib/theme.ts';
 
 export function Footer() {
@@ -30,8 +30,16 @@ export function Footer() {
             the age you type, inside the search, and the names in your results, to fetch photos.
           </p>
           <p>
-            <a href="https://github.com/Muktaditbf/at-your-age" target="_blank" rel="noopener">
-              Open source on GitHub
+            Open source and free. If it made you laugh (or cry a little),{' '}
+            <a
+              href="https://github.com/Muktaditbf/at-your-age"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-1 font-semibold text-ink"
+            >
+              <Star size={15} strokeWidth={2.5} aria-hidden="true" />
+              give it a star on GitHub
+              <span className="sr-only">(opens in a new tab)</span>
             </a>
             . Made by Muktaditbf.
           </p>
